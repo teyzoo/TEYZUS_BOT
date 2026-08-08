@@ -1,73 +1,68 @@
-import re
+from dataclasses import dataclass
 
-
-BAD_PATTERNS = [
-    "qz",
-    "zq",
-    "qx",
-    "xq",
-    "qj",
-    "jq",
-    "zx",
-    "xz",
-    "qw",
-    "wq",
-    "vj",
-    "jv",
-    "xv",
-    "vx",
-    "zv",
-    "vz",
-]
-
-REPEATED_BAD = re.compile(
-    r"(.)\1\1"
+from services.hunter.beauty import (
+    beauty_score,
+    readability_score,
 )
 
 
-def has_bad_pattern(username: str) -> bool:
-    username = username.lower()
-
-    for pattern in BAD_PATTERNS:
-        if pattern in username:
-            return True
-
-    return False
-
-
-def has_excessive_repetition(username: str) -> bool:
-    return bool(
-        REPEATED_BAD.search(username)
-    )
+@dataclass
+class HunterFilters:
+    min_beauty: float = 0.0
+    min_readability: float = 0.0
+    letters_only: bool = True
+    no_underscore: bool = True
+    no_digits: bool = True
+    max_length: int = 32
 
 
-def vowel_ratio(username: str) -> float:
-    if not username:
-        return 0.0
+def apply_filters(
+    usernames: list[str],
+    filters: HunterFilters,
+) -> list[str]:
 
-    vowels = sum(
-        1
-        for char in username
-        if char in "aeiou"
-    )
+    result = []
 
-    return vowels / len(username)
+    for username in usernames:
 
+        username = username.lower()
 
-def has_reasonable_structure(username: str) -> bool:
-    ratio = vowel_ratio(username)
+        if len(username) > filters.max_length:
+            continue
 
-    return 0.20 <= ratio <= 0.70
+        if (
+            filters.letters_only
+            and not username.isalpha()
+        ):
+            continue
 
+        if (
+            filters.no_underscore
+            and "_" in username
+        ):
+            continue
 
-def is_beautiful_candidate(username: str) -> bool:
-    if has_bad_pattern(username):
-        return False
+        if (
+            filters.no_digits
+            and any(
+                char.isdigit()
+                for char in username
+            )
+        ):
+            continue
 
-    if has_excessive_repetition(username):
-        return False
+        if (
+            beauty_score(username)
+            < filters.min_beauty
+        ):
+            continue
 
-    if not has_reasonable_structure(username):
-        return False
+        if (
+            readability_score(username)
+            < filters.min_readability
+        ):
+            continue
 
-    return True
+        result.append(username)
+
+    return result
