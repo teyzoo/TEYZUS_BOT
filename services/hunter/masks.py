@@ -1,4 +1,7 @@
-import re
+from itertools import product
+
+
+LETTERS = "abcdefghijklmnopqrstuvwxyz"
 
 
 def validate_mask(mask: str) -> bool:
@@ -7,45 +10,57 @@ def validate_mask(mask: str) -> bool:
     if not 5 <= len(mask) <= 32:
         return False
 
-    return bool(
-        re.fullmatch(
-            r"[a-z0-9?]+",
-            mask,
-        )
+    return all(
+        char == "?"
+        or char in LETTERS
+        for char in mask
     )
 
 
-def matches_mask(
-    username: str,
+def generate_from_mask(
     mask: str,
-) -> bool:
+    limit: int = 5000,
+) -> list[str]:
 
-    username = username.lower()
-    mask = mask.lower()
+    mask = mask.lower().strip()
 
-    if len(username) != len(mask):
-        return False
+    if not validate_mask(mask):
+        return []
 
-    for char, pattern in zip(
-        username,
-        mask,
+    unknown_count = mask.count("?")
+
+    if unknown_count == 0:
+        return [mask]
+
+    if unknown_count > 5:
+        return []
+
+    positions = [
+        index
+        for index, char in enumerate(mask)
+        if char == "?"
+    ]
+
+    result = []
+
+    for letters in product(
+        LETTERS,
+        repeat=unknown_count,
     ):
-        if pattern == "?":
-            continue
 
-        if char != pattern:
-            return False
+        chars = list(mask)
 
-    return True
+        for position, letter in zip(
+            positions,
+            letters,
+        ):
+            chars[position] = letter
 
+        result.append(
+            "".join(chars)
+        )
 
-def mask_to_regex(mask: str) -> str:
-    parts = []
+        if len(result) >= limit:
+            break
 
-    for char in mask:
-        if char == "?":
-            parts.append("[a-z]")
-        else:
-            parts.append(re.escape(char))
-
-    return "^" + "".join(parts) + "$"
+    return result
