@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: teyzus-bot
+    runtime: python
+    plan: free
+
+    buildCommand: pip install -r requirements.txt
+
+    startCommand: python main.py
+
+    healthCheckPath: /health
+
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+
+      - key: ADMIN_IDS
+        sync: false
+
+      - key: DATABASE_URL
+        sync: false
+
+      - key: FREE_SEARCHES_PER_DAY
+        value: "5"
+
+      - key: PREMIUM_SEARCHES_PER_DAY
+        value: "1000"
+
+      - key: FREE_MIN_USERNAME_LENGTH
+        value: "6"
+
+      - key: PREMIUM_MIN_USERNAME_LENGTH
+        value: "5"
+
+      - key: MAX_USERNAME_LENGTH
+        value: "32"
+
+      - key: PREMIUM_BATCH_SIZE
+        value: "10"
+
+      - key: TRAP_INTERVAL_SECONDS
+        value: "300"
+
+      - key: PORT
+        value: "10000"
